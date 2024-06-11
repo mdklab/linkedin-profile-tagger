@@ -43,10 +43,12 @@ function displayAllTags() {
 }
 
 function filterContactsByTag() {
-    const tag = document.getElementById('tagFilter').value;
+    const tag = document.getElementById('tagFilter').value.trim().toLowerCase();
     chrome.storage.sync.get('tags', (data) => {
         const tags = data.tags || {};
-        const filteredContacts = Object.keys(tags).filter(contactId => tags[contactId].includes(tag));
+        const filteredContacts = Object.keys(tags).filter(contactId =>
+            tags[contactId].map(t => t.trim().toLowerCase()).includes(tag)
+        );
         const contactList = document.getElementById('contactList');
         contactList.innerHTML = '';
         filteredContacts.forEach(contactId => {
@@ -65,3 +67,57 @@ document.getElementById('filterButton').onclick = filterContactsByTag;
 
 // Call the function when the page loads
 window.onload = displayAllTags;
+
+function exportTagsToCSV() {
+    chrome.storage.sync.get('tags', (data) => {
+        const tags = data.tags || {};
+        let csvContent = "data:text/csv;charset=utf-8,";
+        Object.entries(tags).forEach(([contactId, contactTags]) => {
+            const row = contactId + ',' + contactTags.join(',');
+            csvContent += row + '\r\n';
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', 'tags.csv');
+        document.body.appendChild(link);
+        link.click();
+    });
+}
+document.getElementById('exportButton').addEventListener('click', exportTagsToCSV);
+
+document.getElementById('importButton').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            console.log('CSV content:', event.target.result);
+            importTagsFromCSV(event.target.result);
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+});
+
+function importTagsFromCSV(csvContent) {
+    console.log('Importing tags from CSV...');
+    const lines = csvContent.split('\n');
+    const tags = {};
+    lines.forEach(line => {
+        const [contactId, ...contactTags] = line.split(',');
+        tags[contactId] = contactTags;
+    });
+    console.log('Parsed tags:', tags);
+    chrome.storage.sync.set({tags}, () => {
+        if (chrome.runtime.lastError) {
+            console.error('Error saving tags:', chrome.runtime.lastError);
+        } else {
+            console.log('Tags saved successfully');
+            // Refresh tags list
+            displayAllTags();
+        }
+    });
+}
