@@ -106,6 +106,19 @@ function addTag() {
         return;
     }
     const contactId = window.location.pathname.split('/')[2]; // Example of getting the contact ID
+
+    // Get the full name of the contact
+    const fullName = document.querySelector('.pv-top-card__non-self-photo-wrapper button img').title.trim();
+    const imageUrl = document.querySelector('.pv-top-card__non-self-photo-wrapper button img').src;
+
+    chrome.storage.sync.get('contacts', (data) => {
+        const contacts = data.contacts || {};
+        contacts[contactId] = {};
+        contacts[contactId]['name'] = fullName;
+        contacts[contactId]['img'] = imageUrl;
+        chrome.storage.sync.set({contacts}, () => {
+        })
+    });
     chrome.storage.sync.get('tags', (data) => {
         const tags = data.tags || {};
         tags[contactId] = tags[contactId] || [];

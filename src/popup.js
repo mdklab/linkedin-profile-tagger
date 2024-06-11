@@ -43,6 +43,10 @@ function displayAllTags() {
 }
 
 function filterContactsByTag() {
+    let contacts;
+    chrome.storage.sync.get('contacts', (data) => {
+        contacts = data.contacts || {};
+    })
     const tag = document.getElementById('tagFilter').value.trim().toLowerCase();
     chrome.storage.sync.get('tags', (data) => {
         const tags = data.tags || {};
@@ -52,12 +56,28 @@ function filterContactsByTag() {
         const contactList = document.getElementById('contactList');
         contactList.innerHTML = '';
         filteredContacts.forEach(contactId => {
+            const contact = contacts[contactId];
+
             const listItem = document.createElement('li');
+
+            const contactInfo = document.createElement('div');
+            contactInfo.className = 'contact-info';
+
+            const contactImage = document.createElement('img');
             const link = document.createElement('a');
+            // Create and append the contact image
+            if (contact && contact.img) {
+                contactImage.className = 'contact-img';
+                contactImage.src = contact.img;
+                contactInfo.appendChild(contactImage);
+            }
+
             link.href = `https://www.linkedin.com/in/${contactId}`;
-            link.textContent = contactId;
+            link.textContent = contact ? contact.name : contactId;
             link.target = '_blank'; // Open the link in a new tab
-            listItem.appendChild(link);
+            contactInfo.appendChild(link);
+
+            listItem.appendChild(contactInfo);
             contactList.appendChild(listItem);
         });
     });
