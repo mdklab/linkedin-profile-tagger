@@ -32,7 +32,11 @@ function addTagButton() {
 }
 
 function addTag() {
-    const tag = prompt('Enter a tag for this contact:');
+    const tag = prompt('Enter a tag for this contact');
+    if (!tag.trim()) {
+        alert('Tag cannot be empty');
+        return;
+    }
     const contactId = window.location.pathname.split('/')[2]; // Example of getting the contact ID
     chrome.storage.sync.get('tags', (data) => {
         const tags = data.tags || {};
