@@ -67,8 +67,8 @@ function addTagButton() {
 
             contactTags.forEach(tag => {
                 const tagItem = document.createElement('li');
-                tagItem.className = 'tag-item';
-                tagItem.innerText = tag;
+                tagItem.className = 'ember-view link-without-visited-state cursor-pointer text-heading-small inline-block break-words tag-button';
+                tagItem.innerText = '#' + tag;
                 tagItem.onclick = function () {
                     // Ask for confirmation before removing the tag
                     if (!confirm('Are you sure you want to remove this tag?')) {
