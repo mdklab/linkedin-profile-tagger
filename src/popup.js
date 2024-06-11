@@ -108,7 +108,7 @@ function importTagsFromCSV(csvContent) {
     const tags = {};
     lines.forEach(line => {
         const [contactId, ...contactTags] = line.split(',');
-        tags[contactId] = contactTags;
+        tags[contactId] = contactTags.filter(tag => tag && tag.trim() !== '');
     });
     console.log('Parsed tags:', tags);
     chrome.storage.sync.set({tags}, () => {
