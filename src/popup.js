@@ -89,11 +89,19 @@ document.getElementById('filterButton').onclick = filterContactsByTag;
 window.onload = displayAllTags;
 
 function exportTagsToCSV() {
+    let contacts;
+    chrome.storage.sync.get('contacts', (data) => {
+        contacts = data.contacts || {};
+    })
     chrome.storage.sync.get('tags', (data) => {
         const tags = data.tags || {};
         let csvContent = "data:text/csv;charset=utf-8,";
         Object.entries(tags).forEach(([contactId, contactTags]) => {
-            const row = contactId + ',' + contactTags.join(',');
+            const contact = contacts[contactId];
+            const row = contactId + ','
+                + (contact ? contact.name : '') + ','
+                + (contact ? contact.img : '') + ','
+                + contactTags.join(',');
             csvContent += row + '\r\n';
         });
         const encodedUri = encodeURI(csvContent);
@@ -125,12 +133,27 @@ document.getElementById('importButton').addEventListener('click', () => {
 function importTagsFromCSV(csvContent) {
     console.log('Importing tags from CSV...');
     const lines = csvContent.split('\n');
+    const contacts = {};
     const tags = {};
     lines.forEach(line => {
-        const [contactId, ...contactTags] = line.split(',');
-        tags[contactId] = contactTags.filter(tag => tag && tag.trim() !== '');
+        const [contactId, contactName, contactImg, ...contactTags] = line.split(',');
+        let t = contactTags.filter(tag => tag && tag.trim() !== '');
+        if (contactId && t.length > 0) {
+            contacts[contactId] = {};
+            contacts[contactId].name = contactName;
+            contacts[contactId].img = contactImg;
+            tags[contactId] = t;
+        }
     });
+    console.log('Parsed contacts:', contacts);
     console.log('Parsed tags:', tags);
+    chrome.storage.sync.set({contacts}, () => {
+        if (chrome.runtime.lastError) {
+            console.error('Error saving contacts:', chrome.runtime.lastError);
+        } else {
+            console.log('Contacts saved successfully');
+        }
+    });
     chrome.storage.sync.set({tags}, () => {
         if (chrome.runtime.lastError) {
             console.error('Error saving tags:', chrome.runtime.lastError);
